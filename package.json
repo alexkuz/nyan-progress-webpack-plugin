@@ -1,0 +1,35 @@
+{
+  "name": "nyan-progress-webpack-plugin",
+  "version": "1.0.0",
+  "description": "Meow",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/alexkuz/nyan-progress-webpack-plugin.git"
+  },
+  "keywords": [
+    "webpack",
+    "plugin",
+    "progress",
+    "nyan",
+    "meow"
+  ],
+  "author": "Alexander <alexkuz@gmail.com> (http://kuzya.org/)",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/alexkuz/nyan-progress-webpack-plugin/issues"
+  },
+  "homepage": "https://github.com/alexkuz/nyan-progress-webpack-plugin#readme",
+  "dependencies": {
+    "clor": "git+https://github.com/alexkuz/clor.git#2cf125885bab0572f28dd1b3c6db0e2a1cc01cbf"
+  },
+  "devDependencies": {
+    "node-libs-browser": "^0.5.2"
+  },
+  "peerDependencies": {
+    "webpack": "^1.10.1"
+  }
+}
