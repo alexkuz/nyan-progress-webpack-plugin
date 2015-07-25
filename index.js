@@ -15,7 +15,7 @@ function prepareNyan(nyan, colorMap, mapColors) {
       } else {
         return arr.concat({
           colorCode: color,
-          color: mapColors[color] || ['reset'],
+          color: mapColors[color] || function(l) { return l; },
           text: chr
         });
       }
@@ -23,7 +23,7 @@ function prepareNyan(nyan, colorMap, mapColors) {
   });
 }
 
-var nyan = prepareNyan([
+var nyanProgress = prepareNyan([
   ' ,--------,     ',
   ' │▗▝ ▞ ▝ ˄---˄  ',
   '~│ ▞  ▞ ❬.◕‿‿◕.❭',
@@ -34,57 +34,92 @@ var nyan = prepareNyan([
   'ggMMMMMMgwwwwwwg',
   ' gggggggggggg   '
 ], {
-  g: ['bold', 'gray'],
-  M: ['magenta', 'inverse'],
-  w: ['bold']
+  g: function(l) { return l; },
+  M: function(l) { return l.bold.magenta.inverse; },
+  w: function(l) { return l.bold; },
+});
+
+var nyanSuccess = prepareNyan([
+  ' ,--------,      ,------.',
+  ' │▗▝ ▞ ▝ ˄---˄  / Nyan! |',
+  '~│ ▞  ▞ ❬.◕‿‿◕.❭--------’',
+  ' `w-w---- w w            '
+], [
+  ' ggggggggggg     wwwwwwww',
+  ' gMMMMMMMggggg  wwwwwwwww',
+  'ggMMMMMMgwwwwwwgwwwwwwwww',
+  ' gggggggggggg            '
+], {
+  g: function(l) { return l; },
+  M: function(l) { return l.bold.magenta.inverse; },
+  w: function(l) { return l.bold; },
 });
 
 var rainbow = [
-  ['hidden', 'red', 'hidden', 'hidden'],
-  ['bgRed', 'yellow', 'bgRed', 'red'],
-  ['bgYellow', 'green', 'bgYellow', 'yellow'],
-  ['bgGreen', 'blue', 'bgGreen', 'green'],
-  ['inverse', 'blue', 'bgBlue', 'blue']
+  [
+    function(l) { return l.red; },
+    function(l) { return function(c) { return l(' '); } }
+  ],
+  [
+    function(l) { return l.bgRed.yellow; },
+    function(l) { return l.bold.red.bgRed; }
+  ],
+  [
+    function(l) { return l.bgYellow.green; },
+    function(l) { return l.bold.yellow.bgYellow; }
+  ],
+  [
+    function(l) { return l.bgGreen.blue; },
+    function(l) { return l.bold.green.bgGreen; }
+  ],
+  [
+    function(l) { return l.inverse.blue; },
+    function(l) { return l.bold.blue.bgBlue; }
+  ]
 ];
 
 function drawRainbow(line, colors, width, step) {
   var wave = '\u2584\u2591';
   return Array.apply(null, Array(width)).reduce(function(l, val, idx) {
     return ((idx + step) % 8) < 4 ?
-      l[colors[1]][colors[0]](wave[0]) :
-      l[colors[3]][colors[2]].bold(colors[2] === 'hidden' ? ' ' : wave[1]);
+      colors[0](l)(wave[0]) :
+      colors[1](l)(wave[1]);
   }, line);
 }
 
-function drawNyan(line, idx) {
-
+function drawNyan(nyan, line, idx) {
   return nyan[idx].reduce(function(l, obj) {
-    var color = obj.color;
-    if (color[1]) {
-      l = l[color[1]];
-    }
-    return l[color[0]](obj.text);
+    return obj.color(l)(obj.text);
   }, line);
 }
+
+function onProgress(progress, message) {
+  var step = shift++;
+  var progressWidth = Math.ceil(progress * 50);
+
+  if (hasProgress)
+    console.log(clor.cursorUp(rainbow.length + 2).string); // eslint-disable-line no-console
+  hasProgress = true;
+  for (var i = 0; i < rainbow.length; i++) {
+    var line = drawRainbow(clor.eraseLine, rainbow[i], progressWidth, step);
+    var nyanLine = i + ((step % 8 < 4) ? -1 : 0);
+    if (nyanLine < 4 && nyanLine >= 0) {
+      line = drawNyan(progress === 1 ? nyanSuccess : nyanProgress, line, nyanLine);
+    }
+
+    console.log(line.string); // eslint-disable-line no-console
+  }
+  console.log(clor.eraseLine.cyan(message).string); // eslint-disable-line no-console
+}
+
+var timer = 0;
 
 module.exports = function NyanProgressPlugin() {
-  return new webpack.ProgressPlugin(function (progress, message) {
-    if (++shift % 40) return;
-    var step = shift / 40;
-
-    const progressWidth = Math.ceil(progress * 50);
-    if (hasProgress)
-      console.log(clor.cursorUp(rainbow.length + 2).string); // eslint-disable-line no-console
-    hasProgress = true;
-    for (var i = 0; i < rainbow.length; i++) {
-      var line = drawRainbow(clor.eraseLine, rainbow[i], progressWidth, step);
-      var nyanLine = i + ((step % 8 < 4) ? -1 : 0);
-      if (nyanLine < 4 && nyanLine >= 0) {
-        line = drawNyan(line, nyanLine);
-      }
-
-      console.log(line.string); // eslint-disable-line no-console
+  return new webpack.ProgressPlugin(function(progress, message) {
+    var now = new Date().getTime();
+    if (now - timer > 250 || progress === 1) {
+      timer = now;
+      onProgress(progress, message);
     }
-    console.log(clor.eraseLine.cyan(message).string); // eslint-disable-line no-console
   });
-}
+};
