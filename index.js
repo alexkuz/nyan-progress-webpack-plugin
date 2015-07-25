@@ -36,7 +36,7 @@ var nyanProgress = prepareNyan([
 ], {
   g: function(l) { return l; },
   M: function(l) { return l.bold.magenta.inverse; },
-  w: function(l) { return l.bold; },
+  w: function(l) { return l.bold; }
 });
 
 var nyanSuccess = prepareNyan([
@@ -52,13 +52,13 @@ var nyanSuccess = prepareNyan([
 ], {
   g: function(l) { return l; },
   M: function(l) { return l.bold.magenta.inverse; },
-  w: function(l) { return l.bold; },
+  w: function(l) { return l.bold; }
 });
 
 var rainbow = [
   [
     function(l) { return l.red; },
-    function(l) { return function(c) { return l(' '); } }
+    function(l) { return function(text) { return l(text.replace(/./g, ' ')); }; }
   ],
   [
     function(l) { return l.bgRed.yellow; },
@@ -79,12 +79,18 @@ var rainbow = [
 ];
 
 function drawRainbow(line, colors, width, step) {
-  var wave = '\u2584\u2591';
-  return Array.apply(null, Array(width)).reduce(function(l, val, idx) {
-    return ((idx + step) % 8) < 4 ?
-      colors[0](l)(wave[0]) :
-      colors[1](l)(wave[1]);
-  }, line);
+  var wave = ['\u2584', '\u2591'];
+  var text = '';
+  var idx = step;
+  for (var i = 0; i < width; i++) {
+    text += wave[idx % 2];
+    if((step + i) % 4 === 0) {
+      line = colors[idx % 2](line)(text);
+      text = '';
+      idx++;
+    }
+  }
+  return text ? colors[idx % 2](line)(text) : line;
 }
 
 function drawNyan(nyan, line, idx) {
