@@ -1,8 +1,7 @@
 var clor = require('clor');
 var webpack = require('webpack');
 
-var shift = 0;
-var hasProgress = false;
+require('object.assign').shim();
 
 function prepareNyan(nyan, colorMap, mapColors) {
   return nyan.map(function(row, idx) {
@@ -99,13 +98,12 @@ function drawNyan(nyan, line, idx) {
   }, line);
 }
 
-function onProgress(progress, message) {
-  var step = shift++;
+function onProgress(progress, message, step, erase, options) {
   var progressWidth = Math.ceil(progress * 50);
 
-  if (hasProgress)
-    console.log(clor.cursorUp(rainbow.length + 2).string); // eslint-disable-line no-console
-  hasProgress = true;
+  if (erase)
+    options.logger(clor.cursorUp(rainbow.length + 2).string);
+
   for (var i = 0; i < rainbow.length; i++) {
     var line = drawRainbow(clor.eraseLine, rainbow[i], progressWidth, step);
     var nyanLine = i + ((step % 8 < 4) ? -1 : 0);
@@ -113,19 +111,30 @@ function onProgress(progress, message) {
       line = drawNyan(progress === 1 ? nyanSuccess : nyanProgress, line, nyanLine);
     }
 
-    console.log(line.string); // eslint-disable-line no-console
+    options.logger(line.string);
   }
-  console.log(clor.eraseLine.cyan(message).string); // eslint-disable-line no-console
+  options.logger(clor.eraseLine.cyan(message).string);
 }
 
-var timer = 0;
+module.exports = function NyanProgressPlugin(options) {
+  var timer = 0;
+  var shift = 0;
 
-module.exports = function NyanProgressPlugin() {
+  options = Object.assign({
+    debounceInterval: 180,
+    logger: console.log.bind(console) // eslint-disable-line no-console
+  }, options);
+
   return new webpack.ProgressPlugin(function(progress, message) {
     var now = new Date().getTime();
-    if (now - timer > 250 || progress === 1) {
+    if (progress === 0) {
+      process.nextTick(onProgress.bind(null, progress, message, shift++, false, options));
+    } if (progress === 1) {
+      onProgress(progress, message, shift++, true, options);
+    }
+    else if (now - timer > options.debounceInterval) {
       timer = now;
-      onProgress(progress, message);
+      process.nextTick(onProgress.bind(null, progress, message, shift++, true, options));
     }
   });
 };
