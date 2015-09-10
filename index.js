@@ -127,7 +127,7 @@ function drawNyan(nyan, line, idx) {
   }, line);
 }
 
-function onProgress(progress, message, step, isInProgress, options) {
+function onProgress(progress, messages, step, isInProgress, options) {
   var progressWidth = Math.ceil(progress * width);
   if (isInProgress)
     options.logger(cursorUp(rainbow.length + stdoutLineCount + 2));
@@ -141,7 +141,8 @@ function onProgress(progress, message, step, isInProgress, options) {
 
     options.logger(line + eraseEndLine);
   }
-  options.logger(wrap(cyan, message) + eraseEndLine +
+  options.logger(options.getProgressMessage(progress, messages, AnsiStyles) +
+    eraseEndLine +
     (isInProgress && stdoutLineCount ? cursorDown(stdoutLineCount) : ''));
 }
 
@@ -156,7 +157,14 @@ module.exports = function NyanProgressPlugin(options) {
   options = Object.assign({
     debounceInterval: 180,
     logger: console.log.bind(console), // eslint-disable-line no-console
-    hookStdout: true
+    hookStdout: true,
+    getProgressMessage: function(percentage, messages, styles) {
+      return styles.cyan.open + messages[0] + styles.cyan.close +
+        (messages[1] ?
+          ' ' + styles.green.open + '(' + messages[1] + ')' + styles.green.close :
+          ''
+        );
+    }
   }, options);
 
   if (options.hookStdout) {
@@ -172,13 +180,13 @@ module.exports = function NyanProgressPlugin(options) {
   return new webpack.ProgressPlugin(function(progress, message) {
     var now = new Date().getTime();
     if (progress === 0) {
-      onProgress(progress, message, shift++, false, options);
+      onProgress(progress, [message], shift++, false, options);
       startTime = now;
       isStarted = true;
     } if (progress === 1) {
       isPrintingProgress = true;
-      var endTimeMessage = '(build time: ' + (now - startTime) / 1000 + ' seconds)';
-      onProgress(progress, message + ' ' + endTimeMessage, shift++, true, options);
+      var endTimeMessage = 'build time: ' + (now - startTime) / 1000 + 's';
+      onProgress(progress, [message, endTimeMessage], shift++, true, options);
       isPrintingProgress = false;
 
       if (originalStdoutWrite) {
@@ -190,7 +198,7 @@ module.exports = function NyanProgressPlugin(options) {
     else if (now - timer > options.debounceInterval) {
       timer = now;
       isPrintingProgress = true;
-      onProgress(progress, message, shift++, true, options);
+      onProgress(progress, [message], shift++, true, options);
       isPrintingProgress = false;
     }
   });
