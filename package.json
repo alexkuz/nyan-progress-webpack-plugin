@@ -27,7 +27,8 @@
   },
   "homepage": "https://github.com/alexkuz/nyan-progress-webpack-plugin#readme",
   "dependencies": {
-    "clor": "git+https://github.com/alexkuz/clor.git#2cf125885bab0572f28dd1b3c6db0e2a1cc01cbf",
+    "ansi-escapes": "^1.1.0",
+    "ansi-styles": "^2.1.0",
     "object.assign": "^3.0.1"
   },
   "peerDependencies": {
@@ -35,7 +36,7 @@
   },
   "devDependencies": {
     "babel-eslint": "^3.1.26",
-    "eslint": "^0.24.1",
+    "eslint": "^1.3.1",
     "mocha": "^2.2.5"
   }
 }
