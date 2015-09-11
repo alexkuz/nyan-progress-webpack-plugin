@@ -37,3 +37,4 @@ new NyanProgressPlugin(options)
 | hookStdout | Boolean | `true` | If `true`, patches `process.stdout.write` during progress and counts extraneous log messages, to position Nyan Cat properly |
 | getProgressMessage | `function(progress, messages, styles)` | `...` | Gets custom progress message. `styles` is provided for convenience (exported from [ansi-styles](https://github.com/chalk/ansi-styles) module) |
 | debounceInterval | Number | `180` | Defines how often `getProgressMessage` is called (in milliseconds) |
+| nyanCatSays | `function(progress, messages)` | `progress === 1 && 'Nyan!'` | Override this function to define what nyan cat is saying |
