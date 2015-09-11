@@ -94,6 +94,9 @@ describe('Nyan Plugin', function() {
     var plugin = new NyanProgressPlugin({
       getProgressMessage: function(progress, message) {
         return 'Nyan cat says: "' + message + '"';
+      },
+      nyanCatSays: function(progress) {
+        return progress === 1 ? 'My work here is done!' : (progress * 100).toFixed(1);
       }
     });
     plugin.handler(0, 'started');

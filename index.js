@@ -13,7 +13,6 @@ var yellow = AnsiStyles.yellow;
 var green = AnsiStyles.green;
 var blue = AnsiStyles.blue;
 var magenta = AnsiStyles.magenta;
-var cyan = AnsiStyles.cyan;
 
 var bgRed = AnsiStyles.bgRed;
 var bgYellow = AnsiStyles.bgYellow;
@@ -27,14 +26,53 @@ var eraseEndLine = AnsiEscapes.eraseEndLine;
 var width = 50;
 var stdoutLineCount = 0;
 
+var nyanTemplate = {
+  ascii: [
+    ' ,--------,     ',
+    ' │▗▝ ▞ ▝ ˄---˄  ',
+    '~│ ▞  ▞ ❬.◕‿‿◕.❭',
+    ' `w-w---- w w   '
+  ],
+  colors: [
+    ' ggggggggggg    ',
+    ' gMMMMMMMggggg  ',
+    'ggMMMMMMgwwwwwwg',
+    ' gggggggggggg   '
+  ]
+};
+
+var nyanSaysTemplate = {
+  ascii: [
+    ' ,--------,      ,(-)-.',
+    ' │▗▝ ▞ ▝ ˄---˄  / (X) |',
+    '~│ ▞  ▞ ❬.◕‿‿◕.❭--(-)-’',
+    ' `w-w---- w w            '
+  ],
+  colors: [
+    ' ggggggggggg     w(w)ww',
+    ' gMMMMMMMggggg  ww(w)ww',
+    'ggMMMMMMgwwwwwwgww(w)ww',
+    ' gggggggggggg            '
+  ]
+};
+
+var templateColorMap = {
+  g: function(t) { return t; },
+  M: function(t) { return wrap(bold, wrap(magenta, wrap(inverse, t))); },
+  w: function(t) { return wrap(bold, t); }
+}
+
 function wrap(color, text) {
   return color.open + text + color.close;
 }
 
-function prepareNyan(nyan, colorMap, mapColors) {
-  return nyan.map(function(row, idx) {
-    return row.split('').reduce(function (arr, chr, j) {
-      var color = colorMap[idx][j];
+function prepareNyan(template, colorToAscii, text) {
+  text = text && text.toString();
+  return template.ascii.map(function(row, idx) {
+    return row.replace(/\((.)\)/, function(m, c) {
+      return c === 'X' ? text : text.replace(/./g, c);
+    }).split('').reduce(function (arr, chr, j) {
+      var color = template.colors[idx][j];
       var last = arr[arr.length - 1];
       if (last && last.colorCode === color) {
         last.text += chr;
@@ -42,7 +80,7 @@ function prepareNyan(nyan, colorMap, mapColors) {
       } else {
         return arr.concat({
           colorCode: color,
-          color: mapColors[color] || function(t) { return t; },
+          color: colorToAscii[color] || function(t) { return t; },
           text: chr
         });
       }
@@ -50,37 +88,7 @@ function prepareNyan(nyan, colorMap, mapColors) {
   });
 }
 
-var nyanProgress = prepareNyan([
-  ' ,--------,     ',
-  ' │▗▝ ▞ ▝ ˄---˄  ',
-  '~│ ▞  ▞ ❬.◕‿‿◕.❭',
-  ' `w-w---- w w   '
-], [
-  ' ggggggggggg    ',
-  ' gMMMMMMMggggg  ',
-  'ggMMMMMMgwwwwwwg',
-  ' gggggggggggg   '
-], {
-  g: function(t) { return t; },
-  M: function(t) { return wrap(bold, wrap(magenta, wrap(inverse, t))); },
-  w: function(t) { return wrap(bold, t); }
-});
-
-var nyanSuccess = prepareNyan([
-  ' ,--------,      ,------.',
-  ' │▗▝ ▞ ▝ ˄---˄  / Nyan! |',
-  '~│ ▞  ▞ ❬.◕‿‿◕.❭--------’',
-  ' `w-w---- w w            '
-], [
-  ' ggggggggggg     wwwwwwww',
-  ' gMMMMMMMggggg  wwwwwwwww',
-  'ggMMMMMMgwwwwwwgwwwwwwwww',
-  ' gggggggggggg            '
-], {
-  g: function(t) { return t; },
-  M: function(t) { return wrap(bold, wrap(magenta, wrap(inverse, t))); },
-  w: function(t) { return wrap(bold, t); }
-});
+var nyanDefault = prepareNyan(nyanTemplate, templateColorMap);
 
 var rainbow = [
   [
@@ -129,6 +137,8 @@ function drawNyan(nyan, line, idx) {
 
 function onProgress(progress, messages, step, isInProgress, options) {
   var progressWidth = Math.ceil(progress * width);
+  var nyanText = options.nyanCatSays(progress, messages);
+
   if (isInProgress)
     options.logger(cursorUp(rainbow.length + stdoutLineCount + 2));
 
@@ -136,7 +146,11 @@ function onProgress(progress, messages, step, isInProgress, options) {
     var line = drawRainbow(rainbow[i], progressWidth, step);
     var nyanLine = i + ((step % 8 < 4) ? -1 : 0);
     if (nyanLine < 4 && nyanLine >= 0) {
-      line = drawNyan(progress === 1 ? nyanSuccess : nyanProgress, line, nyanLine);
+      line = drawNyan(
+        nyanText ? prepareNyan(nyanSaysTemplate, templateColorMap, nyanText) : nyanDefault,
+        line,
+        nyanLine
+      );
     }
 
     options.logger(line + eraseEndLine);
@@ -164,7 +178,8 @@ module.exports = function NyanProgressPlugin(options) {
           ' ' + styles.green.open + '(' + messages[1] + ')' + styles.green.close :
           ''
         );
-    }
+    },
+    nyanCatSays: function (progress) { return progress === 1 && 'Nyan!'; }
   }, options);
 
   if (options.hookStdout) {
@@ -179,11 +194,11 @@ module.exports = function NyanProgressPlugin(options) {
 
   return new webpack.ProgressPlugin(function(progress, message) {
     var now = new Date().getTime();
-    if (progress === 0) {
+    if (!isStarted) {
       onProgress(progress, [message], shift++, false, options);
       startTime = now;
       isStarted = true;
-    } if (progress === 1) {
+    } else if (progress === 1) {
       isPrintingProgress = true;
       var endTimeMessage = 'build time: ' + (now - startTime) / 1000 + 's';
       onProgress(progress, [message, endTimeMessage], shift++, true, options);
@@ -194,8 +209,7 @@ module.exports = function NyanProgressPlugin(options) {
       }
       stdoutLineCount = 0;
       isStarted = false;
-    }
-    else if (now - timer > options.debounceInterval) {
+    } else if (now - timer > options.debounceInterval) {
       timer = now;
       isPrintingProgress = true;
       onProgress(progress, [message], shift++, true, options);
