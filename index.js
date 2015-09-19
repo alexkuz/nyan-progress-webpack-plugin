@@ -22,6 +22,8 @@ var bgBlue = AnsiStyles.bgBlue;
 var cursorUp = AnsiEscapes.cursorUp;
 var cursorDown = AnsiEscapes.cursorDown;
 var eraseEndLine = AnsiEscapes.eraseEndLine;
+var cursorSavePosition = AnsiEscapes.cursorSavePosition;
+var cursorRestorePosition = AnsiEscapes.cursorRestorePosition;
 
 var width = 50;
 var stdoutLineCount = 0;
@@ -140,7 +142,7 @@ function onProgress(progress, messages, step, isInProgress, options) {
   var nyanText = options.nyanCatSays(progress, messages);
 
   if (isInProgress)
-    options.logger(cursorUp(rainbow.length + stdoutLineCount + 2));
+    options.logger(cursorSavePosition + cursorUp(rainbow.length + stdoutLineCount + 2));
 
   for (var i = 0; i < rainbow.length; i++) {
     var line = drawRainbow(rainbow[i], progressWidth, step);
@@ -157,7 +159,8 @@ function onProgress(progress, messages, step, isInProgress, options) {
   }
   options.logger(options.getProgressMessage(progress, messages, AnsiStyles) +
     eraseEndLine +
-    (isInProgress && stdoutLineCount ? cursorDown(stdoutLineCount) : ''));
+    (isInProgress ? (cursorRestorePosition + cursorUp(1)) : cursorDown(1))
+  );
 }
 
 module.exports = function NyanProgressPlugin(options) {
