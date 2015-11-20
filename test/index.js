@@ -117,6 +117,33 @@ describe('Nyan Plugin', function() {
   });
   /* eslint-enable no-console */
 
+  /* eslint-disable no-console */
+  it('works with cursor position restoring', function(done) {
+    var plugin = new NyanProgressPlugin({ debounceInterval: 50, restoreCursorPosition: true });
+    plugin.handler(0, 'started');
+    var i = 0;
+
+    console.log('extraneous message on start');
+
+    loop(0.01, function(progress) {
+      if (progress < 1) {
+        plugin.handler(progress, 'progress: ' + progress);
+      } else {
+        plugin.handler(1, 'finished');
+        console.log('extraneous message on end');
+        done();
+      }
+      if (i === 1000) {
+        for (var j = 1; j <= 50; j++) {
+          console.log('extraneous message on progress ' + j + ' of 50');
+        };
+      }
+      i++;
+      return progress >= 1;
+    });
+  });
+  /* eslint-enable no-console */
+
   it('works with custom message', function(done) {
     var plugin = new NyanProgressPlugin({
       getProgressMessage: function(progress, message) {
