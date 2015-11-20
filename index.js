@@ -141,8 +141,12 @@ function onProgress(progress, messages, step, isInProgress, options) {
   var progressWidth = Math.ceil(progress * width);
   var nyanText = options.nyanCatSays(progress, messages);
 
-  if (isInProgress)
-    options.logger(cursorSavePosition + cursorUp(rainbow.length + stdoutLineCount + 2));
+  if (isInProgress) {
+    if (options.restoreCursorPosition) {
+      options.logger(cursorSavePosition + cursorUp(1));
+    }
+    options.logger(cursorUp(rainbow.length + stdoutLineCount + 2));
+  }
 
   for (var i = 0; i < rainbow.length; i++) {
     var line = drawRainbow(rainbow[i], progressWidth, step);
@@ -158,9 +162,15 @@ function onProgress(progress, messages, step, isInProgress, options) {
     options.logger(line + eraseEndLine);
   }
   options.logger(options.getProgressMessage(progress, messages, AnsiStyles) +
-    eraseEndLine +
-    (isInProgress ? (cursorRestorePosition + cursorUp(1)) : cursorDown(1))
+    eraseEndLine + (!isInProgress ? cursorDown(1) : '')
   );
+  if (isInProgress) {
+    if (options.restoreCursorPosition) {
+      options.logger(cursorRestorePosition + cursorUp(1));
+    } else if (stdoutLineCount > 0) {
+      options.logger(cursorDown(stdoutLineCount - 1));
+    }
+  }
 }
 
 module.exports = function NyanProgressPlugin(options) {
