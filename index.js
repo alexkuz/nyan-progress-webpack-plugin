@@ -146,6 +146,8 @@ function onProgress(progress, messages, step, isInProgress, options) {
       options.logger(cursorSavePosition + cursorUp(1));
     }
     options.logger(cursorUp(rainbow.length + stdoutLineCount + 2));
+  } else {
+    options.logger('');
   }
 
   for (var i = 0; i < rainbow.length; i++) {
