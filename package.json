@@ -27,12 +27,13 @@
   },
   "homepage": "https://github.com/alexkuz/nyan-progress-webpack-plugin#readme",
   "dependencies": {
+    "webpack": "^3.4.1",
     "ansi-escapes": "^1.1.0",
     "ansi-styles": "^3.0.0",
     "object.assign": "^4.0.4"
   },
   "peerDependencies": {
-    "webpack": "^2.2.1"
+    "webpack": "^3.4.1"
   },
   "devDependencies": {
     "babel-eslint": "^7.1.1",
