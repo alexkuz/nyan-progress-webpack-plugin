@@ -1,6 +1,6 @@
 {
   "name": "nyan-progress-webpack-plugin",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Meow",
   "main": "index.js",
   "scripts": {
